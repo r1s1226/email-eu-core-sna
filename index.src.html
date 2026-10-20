@@ -1,0 +1,709 @@
+<title>이메일로 읽은 조직</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="SNAP email-Eu-core 이메일 네트워크로 핵심 인물과 부서 구조를 분석한 사회 네트워크 분석 기말 프로젝트 결과">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an annotated email thread — an interactive network up top, then one readable column whose figures run wide. */
+:root {
+  --paper: #f3f5f8;
+  --surface: #fcfdfe;
+  --ink: #14213d;
+  --ink-2: #3a4458;
+  --muted: #5c6577;
+  --rule: #d9dee6;
+  --accent: #b4461a;
+  --accent-soft: #fbe9e0;
+  --c-btw: #eb6834;
+  --c-deg: #2a78d6;
+  --c-rand: #8a909b;
+  --c-third: #1baf7a;
+  --c-band: #dfe2e8;
+  --c-edge: 20, 33, 61;
+  --node-lcc: #1f3a6d;
+  --node-cut: #eb6834;
+  --node-gone: #c3c8d2;
+  --stripe-a: #c8402f;
+  --stripe-b: #2a5bd7;
+  --font-display: 'Hahmlet', 'Noto Serif KR', Georgia, serif;
+  --font-body: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'IBM Plex Sans KR', ui-monospace, Consolas, monospace;
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.6rem;
+  --step-3: clamp(1.9rem, 3.4vw, 2.6rem);
+  --step-4: clamp(2.3rem, 5.6vw, 4.1rem);
+  --radius: 14px;
+  --col: 46rem;
+  --wide: 72rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0c1322; --surface: #121b2e; --ink: #e8ecf4; --ink-2: #c1c9d8; --muted: #8e98ab; --rule: #253149;
+    --accent: #f08a54; --accent-soft: #2a1d18; --c-btw: #f07a45; --c-deg: #4c94ea; --c-rand: #8d95a3; --c-third: #2bbf8a;
+    --c-band: #263045; --c-edge: 200, 214, 240; --node-lcc: #8fb2f0; --node-cut: #f07a45; --node-gone: #34405a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0c1322; --surface: #121b2e; --ink: #e8ecf4; --ink-2: #c1c9d8; --muted: #8e98ab; --rule: #253149;
+  --accent: #f08a54; --accent-soft: #2a1d18; --c-btw: #f07a45; --c-deg: #4c94ea; --c-rand: #8d95a3; --c-third: #2bbf8a;
+  --c-band: #263045; --c-edge: 200, 214, 240; --node-lcc: #8fb2f0; --node-cut: #f07a45; --node-gone: #34405a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink-2); font-family: var(--font-body); font-size: var(--step-0);
+  line-height: 1.7; -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: break-word;
+}
+.airmail { height: 6px; background: repeating-linear-gradient(-45deg, var(--stripe-a) 0 14px, transparent 14px 22px, var(--stripe-b) 22px 36px, transparent 36px 44px); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: var(--wide); margin-inline: auto; }
+.col { max-width: var(--col); }
+h1, h2, h3 { color: var(--ink); text-wrap: balance; margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: var(--step-4); line-height: 1.12; letter-spacing: -0.01em; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: var(--step-3); line-height: 1.2; }
+h3 { font-size: var(--step-1); font-weight: 700; line-height: 1.4; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num, td.n, .tab { font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.bar { padding-block: 14px; border-bottom: 1px solid var(--rule); }
+.bar .inner { display: flex; gap: 12px 24px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.mark { font-family: var(--font-mono); font-size: var(--step--1); color: var(--ink); letter-spacing: 0.02em; }
+.mark b { font-weight: 500; color: var(--accent); }
+nav { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: var(--step--1); }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--ink); }
+
+/* mail header lines: the subject's own vernacular, used as section openers */
+.hdr { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; }
+.hdr dt { color: var(--accent); }
+.hdr dd { margin: 0; color: var(--ink-2); }
+
+/* hero */
+.hero { padding-block: clamp(36px, 6vw, 72px) 28px; }
+.hero .inner { display: grid; gap: 28px; }
+.hero .lede { font-size: var(--step-1); max-width: 40rem; color: var(--ink-2); }
+.explorer { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+.stage { position: relative; min-width: 0; aspect-ratio: 16 / 11; max-width: 100%; border-right: 1px solid var(--rule); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: pan-y; }
+.panel { padding: 22px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.seg button { font: inherit; font-size: var(--step--1); padding: 8px 4px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); font-weight: 600; }
+.readout .big { font-family: var(--font-display); font-weight: 800; font-size: 3.4rem; line-height: 1; color: var(--ink); }
+.readout .lbl { font-size: var(--step--1); color: var(--muted); }
+.slider-row { display: grid; gap: 6px; }
+.slider-row label { font-size: var(--step--1); color: var(--ink-2); display: flex; justify-content: space-between; gap: 8px; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { font: inherit; font-size: var(--step--1); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.badge { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.legend { display: grid; gap: 4px; font-size: var(--step--1); color: var(--ink-2); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; background: var(--sw); }
+.note { font-size: var(--step--1); color: var(--muted); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 0.8rem; line-height: 1.45; padding: 6px 10px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, calc(-100% - 12px)); z-index: 2; }
+
+/* verdicts */
+.verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.verdict { border-top: 3px solid var(--ink); padding-top: 14px; display: grid; gap: 8px; align-content: start; }
+.verdict .tag { font-family: var(--font-mono); font-size: var(--step--1); color: var(--muted); display: flex; gap: 10px; align-items: center; }
+
+/* sections */
+section.s { padding-block: clamp(44px, 7vw, 84px); border-top: 1px solid var(--rule); }
+section.s .inner { display: grid; gap: 26px; }
+.body { display: grid; gap: 14px; max-width: var(--col); }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 24px; }
+.stat .v { font-family: var(--font-display); font-weight: 800; font-size: var(--step-3); color: var(--ink); line-height: 1.1; }
+.stat .k { font-size: var(--step--1); color: var(--muted); }
+.fig { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px 18px 14px; display: grid; gap: 10px; min-width: 0; position: relative; }
+.fig .cap { font-size: var(--step--1); color: var(--muted); }
+.fig svg { display: block; width: 100%; height: auto; overflow: visible; }
+.two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; color: var(--ink); font-size: var(--step--1); }
+td.n, th.n { text-align: right; }
+tr.hl td { color: var(--ink); font-weight: 600; }
+details { font-size: var(--step--1); }
+details summary { cursor: pointer; color: var(--muted); }
+details[open] summary { margin-bottom: 8px; }
+.pill { display: inline-block; font-size: 0.78rem; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2); }
+.callout { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--ink); font-weight: 500; max-width: var(--col); }
+select { font: inherit; font-size: var(--step--1); padding: 5px 8px; border-radius: 8px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); }
+.ctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: var(--step--1); color: var(--ink-2); }
+ol.steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; counter-reset: s; }
+ol.steps li { counter-increment: s; border-top: 1px solid var(--ink); padding-top: 12px; display: grid; gap: 4px; }
+ol.steps li::before { content: counter(s); font-family: var(--font-mono); color: var(--accent); font-size: var(--step--1); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.cols2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+footer { padding-block: 36px 48px; border-top: 1px solid var(--rule); font-size: var(--step--1); color: var(--muted); }
+footer .inner { display: grid; gap: 10px; }
+.axis text { fill: var(--muted); font-size: 12px; font-family: var(--font-body); }
+.axis line, .axis path { stroke: var(--rule); }
+.grid line { stroke: var(--rule); stroke-opacity: 0.6; }
+.lbl-svg { font-size: 12.5px; font-family: var(--font-body); fill: var(--ink); }
+@media (max-width: 900px) {
+  .explorer { grid-template-columns: 1fr; }
+  .stage { border-right: 0; border-bottom: 1px solid var(--rule); aspect-ratio: 1 / 1; }
+  .two, .cols2 { grid-template-columns: 1fr; }
+  .verdicts { grid-template-columns: 1fr; }
+  .stats, ol.steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.chartlegend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--step--1); color: var(--ink-2); margin-bottom: 6px; }
+.chartlegend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 7px; }
+.chartlegend i.dash { height: 0; border-top: 1.5px dashed var(--muted); }
+.nw { white-space: nowrap; }
+.stat .v { white-space: nowrap; }
+@media (max-width: 520px) { .stat .v { font-size: 1.55rem; } .readout .big { font-size: 2.8rem; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="airmail" aria-hidden="true"></div>
+<header class="bar wrap">
+  <div class="inner">
+    <div class="mark"><b>email-Eu-core</b> · 사회 네트워크 분석 기말 프로젝트</div>
+    <nav aria-label="섹션">
+      <a href="#data">데이터</a><a href="#h1">가설 1</a><a href="#h2">가설 2</a><a href="#h3">가설 3</a><a href="#outlook">한계와 시사점</a><a href="#method">방법</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero wrap">
+  <div class="inner">
+    <dl class="hdr">
+      <dt>From</dt><dd>유럽 연구기관 구성원 1,005명</dd>
+      <dt>To</dt><dd>42개 부서</dd>
+      <dt>Subject</dt><dd>누가 부서를 잇고, 연락 패턴만으로 소속을 알 수 있을까</dd>
+    </dl>
+    <h1>이메일 관계 25,571개로<br>조직을 읽다</h1>
+    <p class="lede">구성원끼리 메일을 주고받은 기록만으로 부서를 잇는 핵심 인물을 찾고, 그들이 빠지면 소통망이 어떻게 되는지, 그리고 연락 패턴만으로 소속 부서를 맞힐 수 있는지를 살펴봤습니다. 아래에서 핵심 인물을 직접 빼 보세요.</p>
+
+    <div class="explorer" id="explorer">
+      <div class="stage" id="stage">
+        <canvas id="net" aria-label="이메일 네트워크. 노드 986개, 간선 16,064개. 오른쪽 조작판으로 핵심 인물을 제거할 수 있습니다." role="img"></canvas>
+        <div class="tip" id="nettip" hidden></div>
+      </div>
+      <div class="panel">
+        <div class="seg" role="group" aria-label="제거 순서">
+          <button type="button" id="st-btw" data-s="betweenness" aria-pressed="true">betweenness</button>
+          <button type="button" id="st-deg" data-s="degree" aria-pressed="false">degree</button>
+          <button type="button" id="st-rand" data-s="random" aria-pressed="false">무작위</button>
+        </div>
+        <div class="readout">
+          <div class="big num" id="lccPct">100%</div>
+          <div class="lbl">남은 최대 연결 요소 (986명 기준) <span class="badge" id="halfBadge" hidden>절반 아래</span></div>
+        </div>
+        <div class="slider-row">
+          <label for="k"><span>제거한 사람</span><span class="num" id="kLabel">0명 (0.0%)</span></label>
+          <input type="range" id="k" min="0" max="400" step="1" value="0">
+        </div>
+        <div class="btnrow">
+          <button type="button" class="btn primary" id="play">재생</button>
+          <button type="button" class="btn" id="reset">처음으로</button>
+        </div>
+        <div class="legend">
+          <span style="--sw: var(--node-lcc)">최대 연결 요소에 남은 사람</span>
+          <span style="--sw: var(--node-cut)">떨어져 나간 사람</span>
+          <span style="--sw: var(--node-gone)">제거한 사람</span>
+        </div>
+        <p class="note" id="stratNote"></p>
+      </div>
+    </div>
+
+    <div class="verdicts">
+      <div class="verdict"><div class="tag">가설 1 <span class="pill">수정</span></div><h3>연결자는 허브, 핵심 구조는 견고</h3><p>연결자 역할은 연락 상대가 많은 허브의 공통 특징이고, 소통망을 절반으로 줄이려면 약 30%를 빼야 했습니다.</p></div>
+      <div class="verdict"><div class="tag">가설 2 <span class="pill">부분 지지</span></div><h3>약하지만 유의한 동종선호</h3><p>같은 부서끼리의 간선은 33.6%로 무작위의 약 7배입니다. 라벨 80%로 학습해 35개 부서 소속을 정확도 0.76으로 맞혔습니다.</p></div>
+      <div class="verdict"><div class="tag">가설 3 <span class="pill">부분 지지</span></div><h3>GCN의 이점은 작음</h3><p>시험한 설정에서 node2vec은 DeepWalk보다 낫지 않았고, GCN은 같은 구조의 MLP보다 Macro-F1이 0.033 높았습니다(예비 결과).</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="data">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>데이터</dd></dl>
+    <h2>SNAP <span class="nw">email-Eu-core</span></h2>
+    <div class="stats">
+      <div class="stat"><div class="v num">1,005명</div><div class="k">구성원 (노드)</div></div>
+      <div class="stat"><div class="v num">25,571개</div><div class="k">방향 있는 이메일 관계</div></div>
+      <div class="stat"><div class="v num">42개</div><div class="k">부서 라벨</div></div>
+      <div class="stat"><div class="v num">986명</div><div class="k">분석 대상 (최대 연결 요소)</div></div>
+    </div>
+    <div class="body">
+      <p>메일을 한 번 이상 보낸 관계가 방향 있는 간선으로 기록되어 있고, 구성원마다 42개 부서 중 하나가 붙어 있습니다. 자기 자신에게 보낸 642개 간선을 지우고 무방향 그래프로 바꾸면 간선 16,064개가 남습니다. 이때 한쪽으로만 보낸 관계, 즉 사람 쌍의 약 45%는 방향 정보를 잃습니다.</p>
+      <p>남은 그래프에서 가장 큰 연결 요소는 986명이고, 나머지 19명은 자기 루프만 있던 고립 노드입니다. 최대 연결 요소 안에서 두 사람 사이의 거리는 평균 2.6단계입니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="h1">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>가설 1 · 핵심 인물과 제거 실험</dd></dl>
+    <h2>부서를 잇는 사람은 허브였고, 소통망은 쉽게 끊기지 않았다</h2>
+    <div class="body">
+      <p>betweenness 상위 10명은 이웃의 93%가 다른 부서 사람이고 평균 33.6개 부서와 이어져 있습니다. 그런데 단순히 연락 상대가 많은 degree 상위 10명도 똑같이 93%이고, 두 명단 중 7명이 겹칩니다. 연결자 역할은 betweenness가 높은 사람만이 아니라 허브의 공통 특징입니다.</p>
+    </div>
+    <div class="tablewrap col">
+      <table>
+        <thead><tr><th>지표</th><th class="n">betweenness 상위 10명</th><th class="n">degree 상위 10명</th><th class="n">전체 평균</th></tr></thead>
+        <tbody id="brokerRows"></tbody>
+      </table>
+    </div>
+    <div class="fig" id="removalFig">
+      <h3>제거 비율에 따른 최대 연결 요소</h3>
+      <p class="cap">마우스를 올리면 그 지점의 값을 보여 줍니다. 점은 최대 연결 요소가 절반 아래로 떨어지는 첫 지점입니다.</p>
+      <div id="removalChart"></div>
+      <details><summary>표로 보기</summary><div class="tablewrap"><table id="removalTable"></table></div></details>
+    </div>
+    <p class="callout">절반 아래로 떨어지는 지점은 betweenness 30.4%, degree 33.0%, 무작위 46.9%였습니다. 두 번째로 큰 연결 요소는 측정 범위에서 8%를 넘지 않아, 네트워크는 쪼개지기보다 조금씩 깎여 나갔습니다.</p>
+    <div class="body">
+      <p>그 바탕에는 촘촘한 핵심부가 있습니다. 79명이 서로 안에서만 각자 34명 이상과 연결된 34-core를 이루고, 이들이 28개 부서에 걸쳐 있습니다. 그래서 가설 1은 “표적 제거가 무작위보다 효과적이지만, 핵심 구조는 견고하다”로 수정했습니다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="h2">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>가설 2 · 동종선호와 부서 예측</dd></dl>
+    <h2>같은 부서끼리 더 자주 연락하지만, 밀집이라고 하기에는 약하다</h2>
+    <div class="stats">
+      <div class="stat"><div class="v num">33.6%</div><div class="k">같은 부서 사이의 간선</div></div>
+      <div class="stat"><div class="v num">4.7%</div><div class="k">부서 라벨을 무작위로 섞었을 때</div></div>
+      <div class="stat"><div class="v num">0.30</div><div class="k">부서 assortativity</div></div>
+      <div class="stat"><div class="v num">46%</div><div class="k">이웃 중 같은 부서 (평균)</div></div>
+    </div>
+    <div class="two">
+      <div class="fig">
+        <h3>DeepWalk 임베딩의 t-SNE</h3>
+        <div class="ctl"><label for="deptSel">강조할 부서</label><select id="deptSel"></select></div>
+        <div id="tsneChart"></div>
+        <p class="cap">점 하나가 구성원 한 명입니다. 같은 부서 사람들이 대체로 가까이 모입니다.</p>
+      </div>
+      <div class="body">
+        <p>같은 부서 사람끼리 이어진 간선은 33.6%로, 부서 크기를 유지한 채 라벨을 섞었을 때(4.7%)의 약 7배입니다. 다만 부서를 그대로 커뮤니티로 본 modularity는 0.29이고, 18명짜리 최대 clique 56개 중 한 부서가 80% 이상을 차지하는 것은 4개뿐입니다.</p>
+        <p>그래도 구조만으로 소속을 꽤 잘 맞힙니다. DeepWalk 임베딩에 로지스틱 회귀를 쓰면, 각 fold에서 80%의 라벨로 학습해 35개 부서를 다음과 같이 맞힙니다.</p>
+        <div class="stats" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+          <div class="stat"><div class="v num">0.76</div><div class="k">정확도 (다수 클래스 0.11)</div></div>
+          <div class="stat"><div class="v num">0.65</div><div class="k">Macro-F1</div></div>
+        </div>
+        <p class="note">임베딩 시드 3개 평균 · 5명 미만인 7개 부서는 평가에서 제외</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="h3">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>가설 3 · 모델 비교</dd></dl>
+    <h2>node2vec은 DeepWalk와 같았고, GCN의 이점은 작았다</h2>
+    <div class="two">
+      <div class="fig">
+        <h3>방법별 Macro-F1</h3>
+        <p class="cap">같은 5-fold, 시드 0 임베딩. 막대 끝의 괄호는 정확도입니다.</p>
+        <div id="barChart"></div>
+        <details><summary>표로 보기</summary><div class="tablewrap"><table id="barTable"></table></div></details>
+      </div>
+      <div class="body">
+        <p>GCN은 Macro-F1 0.668로 가장 높았고, 그래프 연결만 뺀 같은 구조의 MLP보다 0.033 높았습니다. 5개 fold 중 4개에서 앞섰지만, 분할 하나와 임베딩 시드 하나로 얻은 예비 결과입니다.</p>
+        <p>학습이 필요 없는 기준선도 강합니다. label spreading은 정확도 0.767로 MLP와 같고, 다만 Macro-F1은 0.612로 더 낮습니다.</p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>node2vec vs DeepWalk</th><th class="n">정확도</th><th class="n">Macro-F1</th><th class="n">시드 간 편차</th></tr></thead>
+            <tbody id="n2vRows"></tbody>
+          </table>
+        </div>
+        <p class="note">로지스틱 회귀, 임베딩 시드 3개 평균. 차이가 시드 간 편차와 같은 수준이라, 시험한 p·q에서는 node2vec이 낫다고 할 수 없습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="outlook">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>한계와 시사점</dd></dl>
+    <h2>무엇을 조심해서 읽어야 하고, 조직에는 무엇을 말하는가</h2>
+    <div class="cols2">
+      <div class="body">
+        <h3>한계</h3>
+        <ul class="plain">
+          <li>무방향으로 바꾸면서 단방향 관계(사람 쌍의 약 45%)의 방향 정보를 잃었습니다.</li>
+          <li>분할은 하나뿐이고 하이퍼파라미터 탐색을 하지 않았습니다. skip-gram과 GCN은 numpy로 직접 구현했습니다.</li>
+          <li>5명 미만인 7개 부서(18명)는 분류 평가에서 뺐습니다.</li>
+          <li>label spreading의 α는 결과를 본 뒤 기본값 0.2로 정해 약간 낙관적일 수 있습니다.</li>
+        </ul>
+      </div>
+      <div class="body">
+        <h3>시사점</h3>
+        <ul class="plain">
+          <li>부서 간 중개는 소수 허브에 몰려 있습니다. 상위 10명(1%)이 betweenness 총합의 21%를 차지합니다. 병목은 아니지만 연락 부담을 살펴볼 대상입니다.</li>
+          <li>허브가 빠져도 소통망은 유지되고 떨어져 나가는 것은 작은 조각뿐이라, 연결이 적은 구성원이 고립되지 않게 챙기는 편이 중요합니다.</li>
+          <li>메일 내용 없이 연락 관계와 일부 라벨만으로 소속을 추론할 수 있으니, 메타데이터를 다룰 때 프라이버시를 고려해야 합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s wrap" id="method">
+  <div class="inner">
+    <dl class="hdr"><dt>Subject</dt><dd>방법과 재현</dd></dl>
+    <h2>네 단계 분석</h2>
+    <ol class="steps">
+      <li><h3>그래프 구축</h3><p>자기 루프 제거, 무방향 변환, 최대 연결 요소 986명</p></li>
+      <li><h3>SNA 분석</h3><p>중심성, clique, k-core, 핵심 인물 제거 실험</p></li>
+      <li><h3>임베딩 분류</h3><p>DeepWalk와 node2vec 128차원, 로지스틱 회귀</p></li>
+      <li><h3>GNN 비교</h3><p>2층 GCN과 그래프 연결만 뺀 같은 구조의 MLP</p></li>
+    </ol>
+    <div class="body">
+      <p>평가는 5명 이상인 35개 부서 968명에 층화 5-fold를 쓰고, 모든 방법에 같은 fold를 적용했습니다. 정확도와 함께 부서마다 같은 비중을 주는 Macro-F1을 봤습니다. 모든 수치는 예비 실험 코드 <code>pilot/pilot.py</code>로 다시 만들 수 있고, 핵심 수치는 별도 코드로 한 번 더 계산해 맞춰 봤습니다.</p>
+    </div>
+    <div class="body">
+      <h3>참고 문헌</h3>
+      <ul class="plain" style="font-size: var(--step--1);">
+        <li>J. Leskovec, J. Kleinberg, C. Faloutsos. Graph Evolution: Densification and Shrinking Diameters. ACM TKDD, 2007.</li>
+        <li>H. Yin, A. R. Benson, J. Leskovec, D. F. Gleich. Local Higher-order Graph Clustering. KDD, 2017.</li>
+        <li>B. Perozzi, R. Al-Rfou, S. Skiena. DeepWalk: Online Learning of Social Representations. KDD, 2014.</li>
+        <li>A. Grover, J. Leskovec. node2vec: Scalable Feature Learning for Networks. KDD, 2016.</li>
+        <li>T. N. Kipf, M. Welling. Semi-Supervised Classification with Graph Convolutional Networks. ICLR, 2017.</li>
+        <li>Y. Yu et al. <a href="https://arxiv.org/abs/1710.02836">RUM: network Representation learning throUgh Multi-level structural information preservation</a>. arXiv, 2017.</li>
+        <li>F. Musciotto, S. Micciché. <a href="https://arxiv.org/abs/2209.14077">Exploring the landscape of community-based dismantling strategies</a>. arXiv, 2022.</li>
+        <li>D. Eswaran, S. Kumar, C. Faloutsos. <a href="https://arxiv.org/abs/2002.07833">Higher-Order Label Homogeneity and Spreading in Graphs</a>. arXiv, 2020.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <div class="inner">
+    <p>당택군 · 란가성 · 왕철한 · 유열 · 한양대학교 ERICA 사회 네트워크 분석 (2026년 2학기)</p>
+    <p>데이터: <a href="https://snap.stanford.edu/data/email-Eu-core.html">SNAP email-Eu-core</a>. 수치는 예비 실험 결과입니다.</p>
+  </div>
+</footer>
+<div class="airmail" aria-hidden="true"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = /*__DATA__*/;
+const N = DATA.n_lcc;
+const fmtPct = (v, d = 1) => (v * 100).toFixed(d) + '%';
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const nodes = DATA.nodes.map(r => ({ x: r[0], y: r[1], dept: r[2], deg: r[3], brank: r[4], tx: r[5], ty: r[6], id: r[7] }));
+const edges = DATA.edges;
+
+/* ---------- network explorer ---------- */
+const STRAT = {
+  betweenness: { order: DATA.orders.betweenness, max: DATA.orders.betweenness.length,
+    note: 'betweenness가 높은 순서로 빼고, 10명마다 순위를 다시 계산합니다. 계산은 400명(40.6%)까지 했습니다.' },
+  degree: { order: DATA.orders.degree, max: Math.min(DATA.orders.degree.length, 493),
+    note: '연락 상대가 많은 순서로 빼고, 한 명마다 순위를 다시 계산합니다.' },
+  random: { order: DATA.orders.random, max: 493,
+    note: '한 번의 무작위 순서입니다. 아래 그래프의 무작위 곡선은 20회 평균입니다.' },
+};
+let strat = 'betweenness', k = 0, state = new Uint8Array(N), lccSize = N, hoverIdx = -1;
+const canvas = document.getElementById('net'), ctx = canvas.getContext('2d');
+const slider = document.getElementById('k');
+const parent = new Int32Array(N), size = new Int32Array(N);
+
+function compute() {
+  const removed = new Uint8Array(N);
+  const order = STRAT[strat].order;
+  for (let i = 0; i < k; i++) removed[order[i]] = 1;
+  for (let i = 0; i < N; i++) { parent[i] = i; size[i] = 1; }
+  const find = (a) => { while (parent[a] !== a) { parent[a] = parent[parent[a]]; a = parent[a]; } return a; };
+  for (const [u, v] of edges) {
+    if (removed[u] || removed[v]) continue;
+    let a = find(u), b = find(v);
+    if (a === b) continue;
+    if (size[a] < size[b]) [a, b] = [b, a];
+    parent[b] = a; size[a] += size[b];
+  }
+  let best = -1, bestSize = 0;
+  for (let i = 0; i < N; i++) if (!removed[i] && parent[i] === i && size[i] > bestSize) { best = i; bestSize = size[i]; }
+  for (let i = 0; i < N; i++) state[i] = removed[i] ? 2 : (find(i) === best ? 0 : 1);
+  lccSize = bestSize;
+}
+
+let W = 0, H = 0, PAD = 18;
+function px(n) { return PAD + n.x * (W - 2 * PAD); }
+function py(n) { return PAD + n.y * (H - 2 * PAD); }
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const edgeRGB = css('--c-edge');
+  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = `rgba(${edgeRGB}, 0.055)`;
+  ctx.beginPath();
+  for (const [u, v] of edges) {
+    if (state[u] === 2 || state[v] === 2) continue;
+    ctx.moveTo(px(nodes[u]), py(nodes[u])); ctx.lineTo(px(nodes[v]), py(nodes[v]));
+  }
+  ctx.stroke();
+  const colors = [css('--node-lcc'), css('--node-cut'), css('--node-gone')];
+  for (const pass of [2, 0, 1]) {
+    ctx.fillStyle = colors[pass];
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      if (state[i] !== pass) continue;
+      const n = nodes[i], r = pass === 2 ? 1.6 : 1.4 + Math.sqrt(n.deg) * 0.22;
+      ctx.moveTo(px(n) + r, py(n)); ctx.arc(px(n), py(n), r, 0, Math.PI * 2);
+    }
+    ctx.fill();
+  }
+  if (hoverIdx >= 0) {
+    const n = nodes[hoverIdx];
+    ctx.strokeStyle = css('--accent'); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px(n), py(n), 3 + Math.sqrt(n.deg) * 0.22, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+function updateReadout() {
+  const pct = lccSize / N;
+  document.getElementById('lccPct').textContent = fmtPct(pct);
+  document.getElementById('kLabel').textContent = `${k}명 (${fmtPct(k / N)})`;
+  document.getElementById('halfBadge').hidden = !(pct < 0.5);
+  document.getElementById('stratNote').textContent = STRAT[strat].note;
+}
+function refresh() { compute(); draw(); updateReadout(); }
+function resize() {
+  const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height; canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  draw();
+}
+new ResizeObserver(resize).observe(canvas);
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  strat = b.dataset.s;
+  document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  slider.max = STRAT[strat].max; k = Math.min(k, STRAT[strat].max); slider.value = k; refresh();
+}));
+slider.addEventListener('input', () => { k = +slider.value; refresh(); });
+let playing = null;
+const playBtn = document.getElementById('play');
+function stopPlay() { if (playing) { cancelAnimationFrame(playing); playing = null; } playBtn.textContent = '재생'; }
+playBtn.addEventListener('click', () => {
+  if (playing) return stopPlay();
+  if (reduceMotion) { k = STRAT[strat].max; slider.value = k; refresh(); return; }
+  if (k >= STRAT[strat].max) k = 0;
+  playBtn.textContent = '멈춤';
+  const step = () => {
+    k = Math.min(k + 2, STRAT[strat].max); slider.value = k; refresh();
+    if (k < STRAT[strat].max) playing = requestAnimationFrame(step); else stopPlay();
+  };
+  playing = requestAnimationFrame(step);
+});
+document.getElementById('reset').addEventListener('click', () => { stopPlay(); k = 0; slider.value = 0; refresh(); });
+const tip = document.getElementById('nettip');
+canvas.addEventListener('pointermove', (e) => {
+  const r = canvas.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = -1, bd = 144;
+  for (let i = 0; i < N; i++) {
+    if (state[i] === 2) continue;
+    const dx = px(nodes[i]) - mx, dy = py(nodes[i]) - my, d = dx * dx + dy * dy;
+    if (d < bd) { bd = d; best = i; }
+  }
+  if (best !== hoverIdx) { hoverIdx = best; draw(); }
+  if (best < 0) { tip.hidden = true; return; }
+  const n = nodes[best];
+  tip.textContent = `구성원 #${n.id} · 부서 ${n.dept} · 연락 ${n.deg}명 · betweenness ${n.brank}위`;
+  tip.style.left = px(n) + 'px'; tip.style.top = py(n) + 'px'; tip.hidden = false;
+});
+canvas.addEventListener('pointerleave', () => { hoverIdx = -1; tip.hidden = true; draw(); });
+
+/* ---------- broker table ---------- */
+(function () {
+  const c = DATA.centrality;
+  const rows = [
+    ['다른 부서 이웃의 비율', c.cross_dept_frac_mean_top10_betweenness.toFixed(2), c.cross_dept_frac_mean_top10_degree.toFixed(2), c.cross_dept_frac_mean_all.toFixed(2)],
+    ['이웃이 속한 부서 수', c.neighbour_depts_mean_top10_betweenness.toFixed(1) + '개', c.neighbour_depts_mean_top10_degree.toFixed(1) + '개', c.neighbour_depts_mean_all.toFixed(1) + '개'],
+  ];
+  document.getElementById('brokerRows').innerHTML = rows.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(v => `<td class="n">${v}</td>`).join('')}</tr>`).join('');
+})();
+
+/* ---------- removal curves ---------- */
+const r3 = (v) => v.toFixed(3);
+function drawRemoval() {
+  const host = document.getElementById('removalChart'); host.innerHTML = '';
+  const C = DATA.curves, w = Math.max(300, host.clientWidth), narrow = w < 560;
+  const h = Math.round(Math.max(260, Math.min(420, w * 0.5)));
+  const m = { t: 14, r: narrow ? 12 : 18, b: 44, l: narrow ? 42 : 54 };
+  const x = d3.scaleLinear([0, 0.5], [m.l, w - m.r]), y = d3.scaleLinear([0, 1], [h - m.b, m.t]);
+  const series = [
+    { key: 'betweenness', name: 'betweenness 순 (10명마다 재계산)', color: 'var(--c-btw)', xs: C.betweenness_k.map(v => v / N), ys: C.betweenness },
+    { key: 'degree', name: 'degree 순 (매번 재계산)', color: 'var(--c-deg)', xs: C.k.map(v => v / N), ys: C.degree },
+    { key: 'random', name: '무작위 (20회 평균, 띠는 최소~최대)', color: 'var(--c-rand)', xs: C.k.map(v => v / N), ys: C.random_mean },
+  ];
+  const legend = document.createElement('div'); legend.className = 'chartlegend';
+  legend.innerHTML = series.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join('') +
+    '<span><i class="dash"></i>뺀 만큼만 줄어드는 기준선</span>';
+  host.appendChild(legend);
+  const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${w} ${h}`).attr('width', w).attr('height', h).attr('role', 'img')
+    .attr('aria-label', '제거 비율에 따른 최대 연결 요소 곡선. betweenness, degree, 무작위 제거 비교.');
+  svg.append('g').attr('class', 'grid').selectAll('line').data(y.ticks(5)).join('line')
+    .attr('x1', m.l).attr('x2', w - m.r).attr('y1', d => y(d)).attr('y2', d => y(d));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${h - m.b})`)
+    .call(d3.axisBottom(x).ticks(5).tickFormat(d => d * 100 + '%').tickSizeOuter(0));
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(${m.l},0)`)
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d => d * 100 + '%').tickSizeOuter(0));
+  svg.append('text').attr('class', 'lbl-svg').attr('x', (m.l + w - m.r) / 2).attr('y', h - 8).attr('text-anchor', 'middle')
+    .style('fill', 'var(--muted)').text('제거한 사람의 비율 (986명 기준)');
+  const K = C.k.map(v => v / N);
+  svg.append('path').attr('fill', 'var(--c-band)').attr('opacity', 0.85)
+    .attr('d', d3.area().x((d, i) => x(K[i])).y0((d, i) => y(C.random_min[i])).y1((d, i) => y(C.random_max[i]))(K));
+  svg.append('path').attr('fill', 'none').attr('stroke', 'var(--muted)').attr('stroke-width', 1).attr('stroke-dasharray', '2 4')
+    .attr('d', d3.line()([[x(0), y(1)], [x(0.5), y(0.5)]]));
+  svg.append('line').attr('x1', m.l).attr('x2', w - m.r).attr('y1', y(0.5)).attr('y2', y(0.5))
+    .attr('stroke', 'var(--ink-2)').attr('stroke-dasharray', '4 4').attr('stroke-opacity', 0.6);
+  svg.append('text').attr('class', 'lbl-svg').attr('x', m.l + 6).attr('y', y(0.5) - 6).style('fill', 'var(--muted)').text('절반');
+  for (const s of series.slice().reverse()) {
+    svg.append('path').attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', 2.2).attr('stroke-linejoin', 'round')
+      .attr('d', d3.line()(s.xs.map((v, i) => [x(v), y(s.ys[i])])));
+  }
+  const ann = { betweenness: ['30.4%', -8, 0.37, 'end'], degree: ['33.0%', 8, 0.565, 'start'], random: ['46.9%', -8, 0.42, 'end'] };
+  for (const s of series) {
+    const i = s.ys.findIndex(v => v < 0.5);
+    svg.append('circle').attr('cx', x(s.xs[i])).attr('cy', y(s.ys[i])).attr('r', 5).attr('fill', s.color)
+      .attr('stroke', 'var(--surface)').attr('stroke-width', 2);
+    const [txt, dx, yv, anchor] = ann[s.key];
+    svg.append('text').attr('class', 'lbl-svg').attr('x', x(s.xs[i]) + dx).attr('y', y(yv)).attr('text-anchor', anchor)
+      .style('font-weight', 700).text(txt);
+  }
+  // hover crosshair
+  const hov = svg.append('g').style('display', 'none');
+  hov.append('line').attr('y1', m.t).attr('y2', h - m.b).attr('stroke', 'var(--ink-2)').attr('stroke-opacity', 0.5);
+  const dots = series.map(s => hov.append('circle').attr('r', 4).attr('fill', s.color).attr('stroke', 'var(--surface)').attr('stroke-width', 1.5));
+  const fig = document.getElementById('removalFig');
+  let tipEl = fig.querySelector('.tip.chart');
+  if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tip chart'; tipEl.hidden = true; fig.appendChild(tipEl); }
+  svg.append('rect').attr('x', m.l).attr('y', m.t).attr('width', w - m.l - m.r).attr('height', h - m.t - m.b).attr('fill', 'transparent')
+    .on('pointermove', (e) => {
+      const [mx] = d3.pointer(e); const xv = Math.max(0, Math.min(0.5, x.invert(mx)));
+      hov.style('display', null); hov.select('line').attr('x1', x(xv)).attr('x2', x(xv));
+      const lines = [`제거 ${Math.round(xv * N)}명 (${fmtPct(xv)})`];
+      series.forEach((s, j) => {
+        const i = d3.bisector(d => d).center(s.xs, xv);
+        const inRange = xv <= s.xs[s.xs.length - 1] + 1e-9;
+        dots[j].style('display', inRange ? null : 'none').attr('cx', x(s.xs[i])).attr('cy', y(s.ys[i]));
+        lines.push(`${s.name.split(' (')[0]}: ${inRange ? fmtPct(s.ys[i]) : '계산 범위 밖'}`);
+      });
+      const box = svg.node().getBoundingClientRect(), fb = fig.getBoundingClientRect();
+      tipEl.innerHTML = lines.join('<br>'); tipEl.hidden = false;
+      const left = box.left - fb.left + x(xv);
+      tipEl.style.left = Math.min(Math.max(left, 110), fb.width - 110) + 'px';
+      tipEl.style.top = (box.top - fb.top + m.t + 8) + 'px';
+      tipEl.style.transform = 'translate(-50%, 0)';
+    })
+    .on('pointerleave', () => { hov.style('display', 'none'); tipEl.hidden = true; });
+  // table view
+  const pick = [10, 50, 100, 200, 300, 400];
+  const val = (s, kk) => { const i = s.xs.findIndex(v => Math.abs(v * N - kk) < 0.5); return i >= 0 ? fmtPct(s.ys[i]) : '–'; };
+  document.getElementById('removalTable').innerHTML =
+    `<thead><tr><th>제거 인원</th>${series.map(s => `<th class="n">${s.name.split(' (')[0]}</th>`).join('')}</tr></thead><tbody>` +
+    pick.map(kk => `<tr><td class="tab">${kk}명 (${fmtPct(kk / N)})</td>${series.map(s => `<td class="n">${val(s, kk)}</td>`).join('')}</tr>`).join('') + '</tbody>';
+}
+
+/* ---------- t-SNE ---------- */
+function drawTsne() {
+  const host = document.getElementById('tsneChart'); host.innerHTML = '';
+  const w = Math.max(280, host.clientWidth), h = Math.round(w * 0.92), pad = 14;
+  const x = d3.scaleLinear([0, 1], [pad, w - pad]), y = d3.scaleLinear([0, 1], [pad, h - pad]);
+  const sel = document.getElementById('deptSel');
+  const big = Object.entries(DATA.dept_sizes).map(([d, s]) => [+d, s]).sort((a, b) => b[1] - a[1]);
+  if (!sel.options.length) {
+    sel.innerHTML = `<option value="top3">가장 큰 세 부서</option>` + big.filter(([, s]) => s >= 5).map(([d, s]) => `<option value="${d}">부서 ${d} (${s}명)</option>`).join('');
+  }
+  const top3 = big.slice(0, 3).map(([d]) => d);
+  const palette = ['var(--c-deg)', 'var(--c-btw)', 'var(--c-third)'];
+  const pickColor = (d) => {
+    if (sel.value === 'top3') { const i = top3.indexOf(d); return i >= 0 ? palette[i] : null; }
+    return d === +sel.value ? 'var(--c-btw)' : null;
+  };
+  const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${w} ${h}`).attr('width', w).attr('height', h).attr('role', 'img')
+    .attr('aria-label', 'DeepWalk 임베딩의 t-SNE 산점도. 선택한 부서를 색으로 강조합니다.');
+  const pts = nodes.map(n => ({ n, c: pickColor(n.dept) }));
+  pts.sort((a, b) => (a.c ? 1 : 0) - (b.c ? 1 : 0));
+  svg.append('g').selectAll('circle').data(pts).join('circle')
+    .attr('cx', d => x(d.n.tx)).attr('cy', d => y(d.n.ty)).attr('r', d => d.c ? 3.6 : 2.5)
+    .attr('fill', d => d.c || 'var(--node-gone)').attr('stroke', d => d.c ? 'var(--surface)' : 'none').attr('stroke-width', 0.7)
+    .append('title').text(d => `구성원 #${d.n.id} · 부서 ${d.n.dept}`);
+  const groups = sel.value === 'top3' ? top3 : [+sel.value];
+  groups.forEach((d) => {
+    const ps = nodes.filter(n => n.dept === d);
+    const cx = d3.median(ps, n => x(n.tx)), cy = d3.median(ps, n => y(n.ty));
+    svg.append('text').attr('class', 'lbl-svg').attr('x', Math.min(Math.max(cx, 60), w - 60)).attr('y', Math.max(cy - 14, 16)).attr('text-anchor', 'middle')
+      .style('font-weight', 700).style('paint-order', 'stroke').style('stroke', 'var(--surface)').style('stroke-width', 4)
+      .text(`부서 ${d} (${ps.length}명)`);
+  });
+}
+document.getElementById('deptSel').addEventListener('change', drawTsne);
+
+/* ---------- classification bars ---------- */
+function drawBars() {
+  const host = document.getElementById('barChart'); host.innerHTML = '';
+  const S = DATA.classification.seed0;
+  const rows = [
+    ['다수 클래스', S.majority, 'base', '0.006', '0.111'], ['이웃 투표', S.vote, 'base', '0.554', '0.719'],
+    ['label spreading', S.label_spreading, 'base', '0.612', '0.767'],
+    ['DeepWalk + 로지스틱 회귀', S.deepwalk_logreg, 'emb', '0.634', '0.749'], ['MLP (연결 없음)', S.mlp, 'emb', '0.635', '0.767'],
+    ['GCN', S.gcn, 'gcn', '0.668', '0.787'],
+  ];  // display values: exact means rounded to 3 decimals (the stored 4-decimal values can round the wrong way)
+  const col = { base: 'var(--c-rand)', emb: 'var(--c-deg)', gcn: 'var(--c-btw)' };
+  const w = Math.max(280, host.clientWidth), stacked = w < 520;
+  const rowH = stacked ? 52 : 44, m = { t: 6, r: 112, b: 28, l: stacked ? 4 : 190 }, h = m.t + rows.length * rowH + m.b;
+  const x = d3.scaleLinear([0, 0.8], [m.l, w - m.r]);
+  const svg = d3.select(host).append('svg').attr('viewBox', `0 0 ${w} ${h}`).attr('width', w).attr('height', h).attr('role', 'img')
+    .attr('aria-label', '방법별 Macro-F1 막대 그래프. GCN 0.668이 가장 높다.');
+  svg.append('g').attr('class', 'grid').selectAll('line').data(x.ticks(4)).join('line')
+    .attr('x1', d => x(d)).attr('x2', d => x(d)).attr('y1', m.t).attr('y2', h - m.b);
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${h - m.b})`).call(d3.axisBottom(x).ticks(4).tickSizeOuter(0));
+  rows.forEach(([name, v, kind, f1, acc], i) => {
+    const top = m.t + i * rowH, bh = stacked ? 18 : 24;
+    const by = stacked ? top + 24 : top + (rowH - bh) / 2;
+    const bold = kind === 'gcn' ? 700 : 400;
+    svg.append('text').attr('class', 'lbl-svg').style('font-weight', bold)
+      .attr('x', stacked ? m.l : m.l - 12).attr('y', stacked ? top + 16 : by + bh / 2 + 4).attr('text-anchor', stacked ? 'start' : 'end').text(name);
+    const x1 = Math.max(x(v.macro_f1), m.l + 3), r = 4;
+    svg.append('path').attr('fill', col[kind])
+      .attr('d', `M${m.l},${by}H${x1 - r}Q${x1},${by} ${x1},${by + r}V${by + bh - r}Q${x1},${by + bh} ${x1 - r},${by + bh}H${m.l}Z`)
+      .append('title').text(`${name}: Macro-F1 ${f1}, 정확도 ${acc}`);
+    svg.append('text').attr('class', 'lbl-svg').style('font-weight', bold).attr('x', x1 + 8).attr('y', by + bh / 2 + 4)
+      .text(`${f1} (${acc})`);
+  });
+  document.getElementById('barTable').innerHTML = '<thead><tr><th>방법</th><th class="n">Macro-F1</th><th class="n">정확도</th></tr></thead><tbody>' +
+    rows.map(([name, v, kind, f1, acc]) => `<tr><td>${name}</td><td class="n">${f1}</td><td class="n">${acc}</td></tr>`).join('') + '</tbody>';
+}
+
+/* ---------- node2vec table ---------- */
+(function () {
+  const t = DATA.classification.n2v, names = { deepwalk: 'DeepWalk (p = q = 1)', 'node2vec_p1_q0.5': 'node2vec (q = 0.5)', node2vec_p1_q2: 'node2vec (q = 2)' };
+  document.getElementById('n2vRows').innerHTML = Object.entries(names).map(([k, label]) =>
+    `<tr${k === 'deepwalk' ? ' class="hl"' : ''}><td>${label}</td><td class="n">${r3(t[k].acc)}</td><td class="n">${r3(t[k].macro_f1)}</td><td class="n">±${t[k].macro_f1_seed_std.toFixed(3)}</td></tr>`).join('');
+})();
+
+function drawAll() { drawRemoval(); drawTsne(); drawBars(); draw(); }
+refresh(); drawAll();
+let lastW = {};
+const ro = new ResizeObserver((entries) => {
+  for (const e of entries) {
+    const id = e.target.id, wNow = Math.round(e.contentRect.width);
+    if (lastW[id] === wNow) continue;
+    lastW[id] = wNow;
+    if (id === 'removalChart') drawRemoval(); else if (id === 'tsneChart') drawTsne(); else if (id === 'barChart') drawBars();
+  }
+});
+['removalChart', 'tsneChart', 'barChart'].forEach(id => ro.observe(document.getElementById(id)));
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener?.('change', () => draw());
+new MutationObserver(() => draw()).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>

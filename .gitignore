@@ -1,0 +1,3 @@
+# index.html at the root is the body-only build for the Claude artifact; GitHub Pages serves docs/index.html
+/index.html
+__pycache__/
