@@ -107,6 +107,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn { font: inherit; font-size: var(--step--1); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--rule); background: transparent; color: var(--ink); cursor: pointer; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .badge { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
 .legend { display: grid; gap: 4px; font-size: var(--step--1); color: var(--ink-2); }
 .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: 0; background: var(--sw); }
@@ -189,6 +190,10 @@ footer .inner { display: grid; gap: 10px; }
     </dl>
     <h1>이메일 관계 25,571개로<br>조직을 읽다</h1>
     <p class="lede">구성원끼리 메일을 주고받은 기록만으로 부서를 잇는 핵심 인물을 찾고, 그들이 빠지면 소통망이 어떻게 되는지, 그리고 연락 패턴만으로 소속 부서를 맞힐 수 있는지를 살펴봤습니다. 아래에서 핵심 인물을 직접 빼 보세요.</p>
+    <div class="btnrow" role="group" aria-label="발표 자료">
+      <a class="btn primary" href="https://r1s1226.github.io/email-eu-core-sna/files/final-presentation.pdf">발표 슬라이드 (PDF)</a>
+      <a class="btn" href="https://r1s1226.github.io/email-eu-core-sna/files/final-presentation.pptx" download>PowerPoint 파일 (발표자 노트 포함)</a>
+    </div>
 
     <div class="explorer" id="explorer">
       <div class="stage" id="stage">
@@ -389,6 +394,7 @@ footer .inner { display: grid; gap: 10px; }
   <div class="inner">
     <p>당택군 · 란가성 · 왕철한 · 유열 · 한양대학교 ERICA 사회 네트워크 분석 (2026년 2학기)</p>
     <p>데이터: <a href="https://snap.stanford.edu/data/email-Eu-core.html">SNAP email-Eu-core</a>. 수치는 예비 실험 결과입니다.</p>
+    <p>발표 자료: <a href="https://r1s1226.github.io/email-eu-core-sna/files/final-presentation.pdf">슬라이드 PDF</a> · <a href="https://r1s1226.github.io/email-eu-core-sna/files/final-presentation.pptx" download>PowerPoint</a></p>
   </div>
 </footer>
 <div class="airmail" aria-hidden="true"></div>
