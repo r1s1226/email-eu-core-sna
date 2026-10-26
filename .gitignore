@@ -1,3 +1,10 @@
 # index.html at the root is the body-only build for the Claude artifact; GitHub Pages serves docs/index.html
 /index.html
 __pycache__/
+# SNAP data is downloaded by data/download_data.py, not committed
+/data/email-Eu-core/
+# deck build outputs
+/presentation/deck/shots/
+/presentation/deck/export/
+/presentation/deck/preview.html
+/presentation/deck/network_dark.png

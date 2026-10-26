@@ -1,0 +1,59 @@
+{
+  "v": 4,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-20T05:59:28Z"
+  },
+  "lists": "css",
+  "title": "조직 이메일 네트워크의 핵심 인물 탐지와 부서 예측",
+  "order": [
+    "cover",
+    "data-hypotheses",
+    "h1-brokers",
+    "h1-removal",
+    "h2",
+    "h3",
+    "summary",
+    "qa",
+    "appx-models",
+    "appx-homophily",
+    "limits"
+  ],
+  "sections": {
+    "s1": {
+      "description": "도입: 데이터와 세 가지 가설",
+      "start": "cover"
+    },
+    "s2": {
+      "description": "가설 1: 핵심 인물과 제거 실험",
+      "start": "h1-brokers"
+    },
+    "s3": {
+      "description": "가설 2와 가설 3",
+      "start": "h2"
+    },
+    "s4": {
+      "description": "종합, 시사점과 질의응답",
+      "start": "summary"
+    },
+    "s5": {
+      "description": "부록: 질의응답용 백업 슬라이드",
+      "start": "appx-models"
+    }
+  },
+  "faces": {
+    "hahmlet": {
+      "family": "Hahmlet",
+      "href": "https://fonts.googleapis.com/css2?family=Hahmlet:wght@500;700&display=swap"
+    },
+    "ibm-plex-sans-kr": {
+      "family": "IBM Plex Sans KR",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+    },
+    "ibm-plex-mono": {
+      "family": "IBM Plex Mono",
+      "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+    }
+  },
+  "designSystems": []
+}

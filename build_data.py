@@ -13,7 +13,9 @@ from collections import Counter
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ROOT = HERE.parent
+# repository layout: pilot/ sits next to this file; course-folder layout: this file is in website/ beside pilot/
+ROOT = HERE if (HERE / "pilot" / "pilot.py").exists() else HERE.parent
+FIGS = next(p for p in (ROOT / "presentation" / "figures", ROOT / "발표" / "figures") if p.exists())
 sys.path.insert(0, str(ROOT / "pilot"))
 import pilot  # noqa: E402
 
@@ -54,7 +56,7 @@ rand_order = list(lcc)
 rng.shuffle(rand_order)
 
 # curves for the chart (cached by 발표/make_figures.py), thinned to every 2nd k
-cur = dict(np.load(ROOT / "발표" / "figures" / "removal_curves.npz"))
+cur = dict(np.load(FIGS / "removal_curves.npz"))
 keep = cur["k"] % 2 == 0
 curves = {
     "k": cur["k"][keep].tolist(),
